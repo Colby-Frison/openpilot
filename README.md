@@ -1,6 +1,6 @@
 <div align="center" style="text-align: center;">
 
-<h1>openpilot</h1>
+<h1>openpilot (release 0.9.8)</h1>
 
 <p>
   <b>openpilot is an operating system for robotics.</b>
