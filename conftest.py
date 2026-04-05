@@ -20,6 +20,11 @@ collect_ignore_glob = [
   "selfdrive/modeld/*.py",
 ]
 
+pytest_plugins = [
+  "openpilot.selfdrive.test.support.fixtures",
+  "openpilot.system.test.support.fixtures",
+]
+
 
 def pytest_sessionstart(session):
   # TODO: fix tests and enable test order randomization
