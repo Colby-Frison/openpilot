@@ -1,5 +1,5 @@
 """
-Harness-only conftest for ``system/test/support/tests``.
+Harness-only conftest for ``system/tests/support/tests``.
 
 Add ``test_*.py`` files here for cross-cutting system tests; until then the suite
 is empty and maps "no tests collected" to exit 0 (same behavior as

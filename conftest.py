@@ -22,7 +22,7 @@ collect_ignore_glob = [
 
 pytest_plugins = [
   "openpilot.selfdrive.test.support.fixtures",
-  "openpilot.system.test.support.fixtures",
+  "openpilot.system.tests.support.fixtures",
 ]
 
 

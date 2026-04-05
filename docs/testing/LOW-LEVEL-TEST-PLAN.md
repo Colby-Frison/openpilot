@@ -67,7 +67,7 @@ The repository already *is* the primary infrastructure (pytest + `conftest.py` +
 | `messaging.py` | `new_live_calibration_message(...)` and room for more builders |
 | `fixtures.py` | Pytest fixtures: `openpilot_params_seeded`, `managed_processes_ctx`, `pub_sub_factory` |
 
-**System** — layout under `system/test/support/` (parallel harness; reuses selfdrive `managed_process_scope`):
+**System** — layout under `system/tests/support/` (inside the existing `system/tests/` tree already listed in `testpaths`; reuses selfdrive `managed_process_scope`):
 
 | Module | Role |
 |--------|------|
@@ -78,13 +78,13 @@ The repository already *is* the primary infrastructure (pytest + `conftest.py` +
 
 Root `conftest.py` registers both plugins so any test under `testpaths` can request fixtures by name:
 
-`openpilot.selfdrive.test.support.fixtures` and `openpilot.system.test.support.fixtures`.
+`openpilot.selfdrive.test.support.fixtures` and `openpilot.system.tests.support.fixtures`.
 
 **Empty harnesses (0 tests, exit 0):** each has a `tests/` folder with only `conftest.py`, mapping `ExitCode.NO_TESTS_COLLECTED` to `OK`.
 
 ```bash
 python -m pytest selfdrive/test/support/tests -q
-python -m pytest system/test/support/tests -q
+python -m pytest system/tests/support/tests -q
 # expect: no tests collected, exit code 0 for each
 ```
 
@@ -155,7 +155,7 @@ python -m pytest system/test/support/tests -q
 **Implementation notes:**
 
 - Prefer extending existing `tests/` packages under each component.
-- Use `selfdrive/test/helpers.py::processes_context` or `openpilot.system.test.support.managed_process_scope` when multiple managed processes must run together.
+- Use `selfdrive/test/helpers.py::processes_context` or `openpilot.system.tests.support.managed_process_scope` when multiple managed processes must run together.
 - For network-facing code, follow `http_server_context` / handler patterns already in `helpers.py`.
 
 ---
@@ -191,7 +191,7 @@ pytest
 
 # Shared support harnesses (empty until you add tests; exit 0)
 pytest selfdrive/test/support/tests
-pytest system/test/support/tests
+pytest system/tests/support/tests
 
 # Modeld only
 pytest selfdrive/modeld/tests/
@@ -225,7 +225,7 @@ Native gtests are invoked via the build system after `scons` (or the component�
 - [ ] Teardown leaves no stray processes (rely on `openpilot_function_fixture` + explicit stops).
 - [ ] STP risk IDs (`R*`) noted in docstring or PR description.
 - [ ] Appropriate markers: `slow`, `tici`, etc.
-- [ ] If a new pattern is duplicated three times, extract to `selfdrive/test/support/` or `system/test/support/` (by layer) with a one-module responsibility.
+- [ ] If a new pattern is duplicated three times, extract to `selfdrive/test/support/` or `system/tests/support/` (by layer) with a one-module responsibility.
 
 ---
 

@@ -27,12 +27,12 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 # Low-level test plan
 
-* [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md): Tactical guide aligned with the STP—repository pytest/native conventions, phased shared infrastructure (`selfdrive/test/support/` and `system/test/support/`), per-subsystem work breakdown, risk traceability (R1–R10), and scoped commands.
+* [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md): Tactical guide aligned with the STP—repository pytest/native conventions, phased shared infrastructure (`selfdrive/test/support/` and `system/tests/support/`), per-subsystem work breakdown, risk traceability (R1–R10), and scoped commands.
 
 **Support harnesses (fixtures + empty plug-in suites):**
 
 * Selfdrive: `python -m pytest selfdrive/test/support/tests -q`
-* System: `python -m pytest system/test/support/tests -q`
+* System: `python -m pytest system/tests/support/tests -q`
 
 Each should report no tests collected and exit successfully until you add `test_*.py` files there. Fixtures from both `support/fixtures.py` modules load globally via root `pytest_plugins` (`openpilot_params_seeded`, `system_daemon_params`, etc.).
 

@@ -12,7 +12,7 @@ Pytest starts from the **repository root**. The root `conftest.py` does three im
 2. **Wraps each test** in an autouse fixture that isolates environment, sets `OPENPILOT_PREFIX`, seeds `random`, and cleans up processes after the test.
 3. **Skips or sets up device tests** marked `@pytest.mark.tici` when not on TICI hardware.
 
-Your **support packages** (`selfdrive/test/support/` and `system/test/support/`) add reusable helpers and fixtures. They do not replace upstream patterns such as `selfdrive/test/helpers.py` or per-component `tests/` trees; they sit beside them.
+Your **support packages** (`selfdrive/test/support/` and `system/tests/support/`) add reusable helpers and fixtures. They do not replace upstream patterns such as `selfdrive/test/helpers.py` or per-component `tests/` trees; they extend the same trees upstream already uses (`selfdrive/test/`, `system/tests/`).
 
 ```mermaid
 flowchart TB
@@ -21,7 +21,7 @@ flowchart TB
     AUTO[Autouse: OpenpilotPrefix + env + manager_cleanup]
     PLUG[pytest_plugins]
     SD[selfdrive.test.support.fixtures]
-    SYS[system.test.support.fixtures]
+    SYS[system.tests.support.fixtures]
     TEST[Test functions / classes]
   end
   ROOT --> AUTO
@@ -35,7 +35,23 @@ flowchart TB
 
 ---
 
-## 2. Where things live
+## 2. `testpaths` versus root `conftest.py`
+
+These are **different jobs** in pytest; both are normal.
+
+| Mechanism | Role |
+|-----------|------|
+| **`testpaths` in `pyproject.toml`** | Tells pytest **which directories to search** for `test_*.py` (and friends). Only paths here (plus CLI paths) participate in **collection** for a default `pytest` run. |
+| **`pytest_plugins` in root `conftest.py`** | **Imports fixture modules by dotted name** so their `@pytest.fixture` definitions are registered **globally**. Those modules do **not** need to appear again in `testpaths`; they are libraries, not test files. |
+| **Root autouse fixtures / hooks** | Same `conftest.py`: session-wide behavior (prefix isolation, `manager_cleanup`, TICI skipping). |
+
+So: **collection roots** are configured in `pyproject.toml`; **fixture registration** is configured next to the rest of pytest hooks in `conftest.py`. Duplicating the support package path in `testpaths` would not register fixtures—you still need `pytest_plugins` (or fixtures defined directly in `conftest.py`).
+
+**Upstream naming:** this repo uses **`selfdrive/test/`** (singular) for shared selfdrive test utilities, and **`system/tests/`** (plural) for top-level system tests such as `test_logmessaged.py`. System support lives under **`system/tests/support/`** so it stays in the same tree instead of inventing a parallel `system/test/`.
+
+---
+
+## 3. Where things live
 
 ```mermaid
 flowchart LR
@@ -51,11 +67,11 @@ flowchart LR
     SDT[selfdrive/test/support/tests/]
   end
   subgraph sys [System support]
-    SYSM[system/test/support/messaging.py]
-    SYSP[system/test/support/processes.py]
-    SYSPS[system/test/support/params_seed.py]
-    SYSF[system/test/support/fixtures.py]
-    SYST[system/test/support/tests/]
+    SYSM[system/tests/support/messaging.py]
+    SYSP[system/tests/support/processes.py]
+    SYSPS[system/tests/support/params_seed.py]
+    SYSF[system/tests/support/fixtures.py]
+    SYST[system/tests/support/tests/]
   end
   subgraph upstream [Upstream-style tests]
     COMP[system/loggerd/tests/ etc.]
@@ -73,25 +89,25 @@ flowchart LR
 | Root `conftest.py` | Global lifecycle, `pytest_plugins`, TICI hooks, `collect_ignore` |
 | `pyproject.toml` `[tool.pytest.ini_options]` | `testpaths`, markers (`slow`, `tici`), xdist defaults, strict markers |
 | `selfdrive/test/support/` | Helpers + fixtures for **selfdrive-oriented** tests (params, processes, calibration message builder) |
-| `system/test/support/` | Helpers + fixtures for **system daemon** tests (daemon params, pub/sub factory; process scope reuses selfdrive) |
+| `system/tests/support/` | Helpers + fixtures for **system daemon** tests (daemon params, pub/sub factory; process scope reuses selfdrive); sits under existing `system/tests/` |
 | `*/tests/conftest.py` (harness only) | In `support/tests/`, maps “no tests collected” to exit code 0 for empty harness runs |
 | Component folders e.g. `system/loggerd/tests/` | **Normal** place for production tests next to the code under test |
 
 ---
 
-## 3. How fixtures reach your test
+## 4. How fixtures reach your test
 
 When a test function lists a name in its parameters, pytest **injects** the matching fixture. Fixture definitions live in:
 
 - `openpilot.selfdrive.test.support.fixtures`
-- `openpilot.system.test.support.fixtures`
+- `openpilot.system.tests.support.fixtures`
 
 Both modules are registered in root `conftest.py`:
 
 ```23:26:conftest.py
 pytest_plugins = [
   "openpilot.selfdrive.test.support.fixtures",
-  "openpilot.system.test.support.fixtures",
+  "openpilot.system.tests.support.fixtures",
 ]
 ```
 
@@ -113,7 +129,7 @@ sequenceDiagram
 
 ---
 
-## 4. What each fixture / helper is for
+## 5. What each fixture / helper is for
 
 ### Selfdrive (`openpilot.selfdrive.test.support`)
 
@@ -124,7 +140,7 @@ sequenceDiagram
 | `pub_sub_factory` | fixture | You need `PubMaster` / `SubMaster` for explicit service lists (never pass an empty list to `SubMaster`). |
 | `seed_minimal_openpilot_params()`, `managed_process_scope`, `new_live_calibration_message` | import from package | Same logic outside pytest or inside a helper. |
 
-### System (`openpilot.system.test.support`)
+### System (`openpilot.system.tests.support`)
 
 | Name | Type | Use when |
 |------|------|----------|
@@ -138,14 +154,14 @@ Process scoping ultimately calls **`selfdrive.test.helpers.processes_context`**,
 
 ---
 
-## 5. Where to put a new test
+## 6. Where to put a new test
 
 ```mermaid
 flowchart TD
   Q[New test for which area?]
   Q -->|Specific component| C[Put next to code:<br/>system/foo/tests/test_*.py<br/>selfdrive/foo/tests/test_*.py]
   Q -->|Cross-cutting selfdrive experiment| S[selfdrive/test/support/tests/test_*.py]
-  Q -->|Cross-cutting system experiment| SY[system/test/support/tests/test_*.py]
+  Q -->|Cross-cutting system experiment| SY[system/tests/support/tests/test_*.py]
   C --> U[Use fixtures by name + local setup_method if needed]
   S --> U
   SY --> U
@@ -153,11 +169,11 @@ flowchart TD
 
 **Default:** add `test_*.py` under the **same tree as the feature** (for example `system/athena/tests/`). That keeps failures localized and matches upstream.
 
-**Harness folders** (`selfdrive/test/support/tests/`, `system/test/support/tests/`) are for experiments or shared regression tests that do not belong to a single submodule. They start empty on purpose; their `conftest.py` only normalizes exit status when nothing is collected yet.
+**Harness folders** (`selfdrive/test/support/tests/`, `system/tests/support/tests/`) are for experiments or shared regression tests that do not belong to a single submodule. They start empty on purpose; their `conftest.py` only normalizes exit status when nothing is collected yet.
 
 ---
 
-## 6. How to implement a test (step by step)
+## 7. How to implement a test (step by step)
 
 1. **Pick the file location** using the decision above.
 2. **Choose fixtures** by what you need:
@@ -193,26 +209,26 @@ class TestFoo:
 
 ---
 
-## 7. Empty harness runs (0 tests, exit 0)
+## 8. Empty harness runs (0 tests, exit 0)
 
 The `support/tests/conftest.py` files (selfdrive and system) register `pytest_sessionfinish` so that **no tests collected** maps to **success**. That lets CI or local scripts run:
 
 ```bash
 python -m pytest selfdrive/test/support/tests -q
-python -m pytest system/test/support/tests -q
+python -m pytest system/tests/support/tests -q
 ```
 
 before any `test_*.py` exists, without pytest’s usual exit code 5.
 
 ---
 
-## 8. Relationship to native / C++ tests
+## 9. Relationship to native / C++ tests
 
 This infrastructure is **Python / pytest**. C++ gtests (for example under `selfdrive/pandad/tests/*.cc`) still build and run via SCons / native targets. The STP treats those as separate evidence paths; the diagrams above apply to the **pytest** layer only.
 
 ---
 
-## 9. Further reading
+## 10. Further reading
 
 * [testing.md](testing.md) — index and quick commands  
 * [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md) — commands, risk matrix, definition of done  
