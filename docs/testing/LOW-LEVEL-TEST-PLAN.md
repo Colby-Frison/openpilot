@@ -58,7 +58,7 @@ The repository already *is* the primary infrastructure (pytest + `conftest.py` +
 
 ### Phase 1 — Shared package (implemented)
 
-Layout under `selfdrive/test/support/`:
+**Selfdrive** — layout under `selfdrive/test/support/`:
 
 | Module | Role |
 |--------|------|
@@ -67,16 +67,28 @@ Layout under `selfdrive/test/support/`:
 | `messaging.py` | `new_live_calibration_message(...)` and room for more builders |
 | `fixtures.py` | Pytest fixtures: `openpilot_params_seeded`, `managed_processes_ctx`, `pub_sub_factory` |
 
-Root `conftest.py` registers `pytest_plugins = ["openpilot.selfdrive.test.support.fixtures"]` so any test under the repo’s `testpaths` can request those fixtures by name.
+**System** — layout under `system/test/support/` (parallel harness; reuses selfdrive `managed_process_scope`):
 
-**Empty harness (0 tests, exit 0):** add new files under `selfdrive/test/support/tests/` (same pattern as other packages). That directory starts with only `conftest.py`, which maps `ExitCode.NO_TESTS_COLLECTED` to `OK` so CI stays green until the first `test_*.py` appears.
+| Module | Role |
+|--------|------|
+| `processes.py` | Re-exports `managed_process_scope` from `openpilot.selfdrive.test.support.processes` |
+| `params_seed.py` | `seed_system_daemon_params()` (e.g. `IsOffroad`, `DongleId`); `seed_full_stack_params()` (+ minimal selfdrive seed) |
+| `messaging.py` | `make_pub_sub(pub, sub, **kw)` for `PubMaster` / `SubMaster` pairs |
+| `fixtures.py` | Pytest fixtures (prefixed `system_`): `system_daemon_params`, `system_full_stack_params`, `system_managed_processes_ctx`, `system_pub_sub_factory` |
+
+Root `conftest.py` registers both plugins so any test under `testpaths` can request fixtures by name:
+
+`openpilot.selfdrive.test.support.fixtures` and `openpilot.system.test.support.fixtures`.
+
+**Empty harnesses (0 tests, exit 0):** each has a `tests/` folder with only `conftest.py`, mapping `ExitCode.NO_TESTS_COLLECTED` to `OK`.
 
 ```bash
 python -m pytest selfdrive/test/support/tests -q
-# expect: no tests collected, exit code 0
+python -m pytest system/test/support/tests -q
+# expect: no tests collected, exit code 0 for each
 ```
 
-**Rule:** Keep subsystem-specific setup (e.g. VisionIPC for modeld) next to those tests; move repeated building blocks here after the second copy.
+**Rule:** Keep subsystem-specific setup (e.g. VisionIPC for modeld, loggerd segment layout) next to those tests; move repeated building blocks into the appropriate `support/` package after the second copy.
 
 ### Phase 2 — Fixtures (pytest)
 
@@ -143,7 +155,7 @@ python -m pytest selfdrive/test/support/tests -q
 **Implementation notes:**
 
 - Prefer extending existing `tests/` packages under each component.
-- Use `selfdrive/test/helpers.py::processes_context` when multiple managed processes must run together.
+- Use `selfdrive/test/helpers.py::processes_context` or `openpilot.system.test.support.managed_process_scope` when multiple managed processes must run together.
 - For network-facing code, follow `http_server_context` / handler patterns already in `helpers.py`.
 
 ---
@@ -177,6 +189,10 @@ Run from repository root with the same `PYTHONPATH` / venv the project expects (
 # Full Python suite (heavy; matches broad CI intent)
 pytest
 
+# Shared support harnesses (empty until you add tests; exit 0)
+pytest selfdrive/test/support/tests
+pytest system/test/support/tests
+
 # Modeld only
 pytest selfdrive/modeld/tests/
 
@@ -209,7 +225,7 @@ Native gtests are invoked via the build system after `scons` (or the component�
 - [ ] Teardown leaves no stray processes (rely on `openpilot_function_fixture` + explicit stops).
 - [ ] STP risk IDs (`R*`) noted in docstring or PR description.
 - [ ] Appropriate markers: `slow`, `tici`, etc.
-- [ ] If a new pattern is duplicated three times, extract to `selfdrive/test/support/` with a one-module responsibility.
+- [ ] If a new pattern is duplicated three times, extract to `selfdrive/test/support/` or `system/test/support/` (by layer) with a one-module responsibility.
 
 ---
 
