@@ -31,7 +31,13 @@ class DummyBuilder:
   def __setattr__(self, name, value):
     self._attrs[name] = value
 
-  def init(self, name, count):
+  def init(self, name, count=None):
+    # capnp supports both list init (field, count) and struct init (field).
+    if count is None:
+      value = DummyBuilder()
+      self._attrs[name] = value
+      return value
+
     values = [DummyBuilder() for _ in range(count)]
     self._attrs[name] = values
     return values
