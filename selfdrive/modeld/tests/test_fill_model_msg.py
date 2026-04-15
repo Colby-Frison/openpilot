@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from openpilot.selfdrive.modeld.constants import Meta, ModelConstants, Plan
 from openpilot.selfdrive.modeld.fill_model_msg import (
@@ -185,7 +186,7 @@ def test_fill_model_msg_populates_core_contract_fields():
   assert model_v2.frameAge == 2
   assert model_v2.timestampEof == 123456
   assert model_v2.frameDropPerc == 10.0
-  assert model_v2.modelExecutionTime == 0.02
+  assert model_v2.modelExecutionTime == pytest.approx(0.02, abs=1e-6)
 
   assert len(model_v2.laneLines) == ModelConstants.NUM_LANE_LINES
   assert len(model_v2.roadEdges) == ModelConstants.NUM_ROAD_EDGES
@@ -193,7 +194,7 @@ def test_fill_model_msg_populates_core_contract_fields():
   assert len(model_v2.laneLineProbs) == ModelConstants.NUM_LANE_LINES
   assert len(model_v2.meta.desirePrediction) == ModelConstants.DESIRE_PRED_LEN * ModelConstants.DESIRE_PRED_WIDTH
 
-  assert base_msg.drivingModelData.action.desiredCurvature == 0.02
-  assert model_v2.action.desiredCurvature == 0.02
+  assert base_msg.drivingModelData.action.desiredCurvature == pytest.approx(0.02, abs=1e-6)
+  assert model_v2.action.desiredCurvature == pytest.approx(0.02, abs=1e-6)
   assert model_v2.confidence in (ConfidenceClass.green, ConfidenceClass.yellow, ConfidenceClass.red)
 
