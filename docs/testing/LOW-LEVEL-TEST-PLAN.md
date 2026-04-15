@@ -196,6 +196,17 @@ pytest system/tests/support/tests
 # Modeld only
 pytest selfdrive/modeld/tests/
 
+# Modeld phased rollout (fast -> integration)
+pytest selfdrive/modeld/tests/test_parse_model_outputs.py -q
+pytest selfdrive/modeld/tests/test_fill_model_msg.py -q
+pytest selfdrive/modeld/tests/test_modeld.py -q
+
+# Coverage comparison: baseline/original vs new modeld tests (opt-in)
+bash scripts/testing/compare_coverage.sh \
+  --cov-target selfdrive/modeld \
+  --baseline "selfdrive/modeld/tests/test_modeld.py" \
+  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"
+
 # Pandad Python tests (prefer explicit files; test_pandad.py is device-heavy / tici)
 pytest selfdrive/pandad/tests/test_pandad_loopback.py
 pytest selfdrive/pandad/tests/test_pandad_spi.py
@@ -226,6 +237,14 @@ Native gtests are invoked via the build system after `scons` (or the componentâ€
 - [ ] STP risk IDs (`R*`) noted in docstring or PR description.
 - [ ] Appropriate markers: `slow`, `tici`, etc.
 - [ ] If a new pattern is duplicated three times, extract to `selfdrive/test/support/` or `system/tests/support/` (by layer) with a one-module responsibility.
+
+### 7.1 modeld rollout gates
+
+- [ ] Phase A parser tests pass standalone (`test_parse_model_outputs.py`) on WSL without starting managed daemons.
+- [ ] Phase B message-mapping tests pass standalone (`test_fill_model_msg.py`) and validate `ModelConstants`-driven array lengths.
+- [ ] Phase C daemon contract tests pass (`test_modeld.py`) with no new flakiness.
+- [ ] Coverage comparison script outputs both reports (`baseline`, `ours`) under `.coverage-compare/modeld/`.
+- [ ] Combined modeld suite passes before merge: `pytest selfdrive/modeld/tests -q`.
 
 ---
 

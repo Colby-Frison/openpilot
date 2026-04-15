@@ -5,6 +5,8 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 * [Directories](#directories)
 * [Infrastructure overview](#infrastructure-overview)
 * [Low-level test plan](#low-level-test-plan)
+* [modeld implementation summary](#modeld-implementation-summary)
+* [Weekly presentation script](#weekly-presentation-script)
 
 # Assigned Subsystems
 * *selfdrive/modeld* (all files)
@@ -35,4 +37,16 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 * System: `python -m pytest system/tests/support/tests -q`
 
 Each should report no tests collected and exit successfully until you add `test_*.py` files there. Fixtures from both `support/fixtures.py` modules load globally via root `pytest_plugins` (`openpilot_params_seeded`, `system_daemon_params`, etc.).
+
+**Modeld coverage comparison (opt-in):**
+
+* `bash scripts/testing/compare_coverage.sh --cov-target selfdrive/modeld --baseline "selfdrive/modeld/tests/test_modeld.py" --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"`
+
+# modeld implementation summary
+
+* [MODELD-IMPLEMENTATION-SUMMARY.md](MODELD-IMPLEMENTATION-SUMMARY.md): Communication-ready summary of what was implemented for `selfdrive/modeld`, exact run commands, coverage artifacts, and reporting checklist.
+
+# Weekly presentation script
+
+* [WEEKLY-PRESENTATION-SCRIPT-MODELD.md](WEEKLY-PRESENTATION-SCRIPT-MODELD.md): Roughly 3-minute script for a weekly update on modeld testing work, how it was implemented, issues resolved, and next steps.
 
