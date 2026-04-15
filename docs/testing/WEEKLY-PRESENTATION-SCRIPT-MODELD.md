@@ -17,6 +17,27 @@ Second, `test_fill_model_msg.py` adds contract tests for how model outputs are m
 
 Third, we extended `test_modeld.py` with an additional recovery scenario to verify that model updates recover correctly only after consecutive road frames return.
 
+### JP Nguyen (`JP-Branch`)
+
+JP implemented additional modeld unit tests on a separate branch so they can be shown alongside the work above without blocking this week’s `master` merge.
+
+What was added (paths are under `selfdrive/modeld/tests/`):
+
+- **`test_constants.py`** — covers `index_function`, `ModelConstants`, and `Plan` / `Meta` slice contracts in `constants.py`.
+- **`test_parse_model_outputs.py`** — covers `safe_exp`, `sigmoid`, `softmax`, and `Parser` behavior (`parse_model_outputs.py`), including binary and categorical cross-entropy and MDN parsing.
+
+**Merge note:** `test_parse_model_outputs.py` also exists on `master` from this sprint. When JP’s branch merges, Git may report conflicts in that file; combine both test suites or deduplicate cases as a team.
+
+**Optional CI on JP’s branch:** `.github/workflows/our_tests.yaml` builds the repo and runs only the two test files above (fork must have GitHub Actions enabled).
+
+**How to run JP’s tests (repo root, Python env active):**
+
+```bash
+pytest selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_constants.py -v
+```
+
+**Presenter tip:** Show pytest output or a short screen recording instead of pasting a long log. Last local run: **67 passed**.
+
 ---
 
 ## How we validated it
