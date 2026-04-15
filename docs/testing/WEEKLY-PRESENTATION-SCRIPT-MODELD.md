@@ -17,27 +17,44 @@ Second, `test_fill_model_msg.py` adds contract tests for how model outputs are m
 
 Third, we extended `test_modeld.py` with an additional recovery scenario to verify that model updates recover correctly only after consecutive road frames return.
 
-### JP Nguyen (`JP-Branch`)
+### JP-Branch
+#### Writing New Unit Tests for modeld
 
-JP implemented additional modeld unit tests on a separate branch so they can be shown alongside the work above without blocking this week’s `master` merge.
+##### What we did
+- Identified that `selfdrive/modeld/parse_model_outputs.py` and `selfdrive/modeld/constants.py` had **zero unit tests** despite containing critical math and configuration used throughout the driving pipeline.
+- Created `selfdrive/modeld/tests/test_parse_model_outputs.py` with 30+ tests covering:
+  - `safe_exp` -- clipping behavior, overflow prevention for float16, array support
+  - `sigmoid` -- boundary values, output range, monotonicity, symmetry
+  - `softmax` -- sum-to-one, non-negativity, numerical stability, different dtypes (float32 vs float16 take different code paths), batch support
+  - `Parser.check_missing` -- ValueError on missing keys, ignore_missing flag
+  - `Parser.parse_binary_crossentropy` -- sigmoid application, missing key handling
+  - `Parser.parse_categorical_crossentropy` -- softmax application, reshaping
+  - `Parser.parse_mdn` -- mu/std splitting, positive standard deviations, shape validation, multi-hypothesis path
+- Created `selfdrive/modeld/tests/test_constants.py` with 25+ tests covering:
+  - `index_function` -- boundary values, quadratic curve, custom parameters
+  - `ModelConstants` -- index list lengths/endpoints, scalar constant validation, FCW thresholds
+  - `Plan` slices -- correct element counts, non-overlapping, full coverage of PLAN_WIDTH
+  - `Meta` slices -- correct element counts for disengage/press/blinker signals
 
-What was added (paths are under `selfdrive/modeld/tests/`):
+#### Why we chose these files
+- **Pure Python + numpy** -- no hardware dependencies, no process management, no camera/VisionIPC. They run instantly on any machine.
+- **High impact** -- `parse_model_outputs.py` processes every single neural network output in the driving pipeline. A bug in `sigmoid` or `softmax` would corrupt all model predictions.
+- **Zero existing coverage** -- the only existing test (`test_modeld.py`) is an integration test that tests the full modeld process, not these utility functions.
 
-- **`test_constants.py`** — covers `index_function`, `ModelConstants`, and `Plan` / `Meta` slice contracts in `constants.py`.
-- **`test_parse_model_outputs.py`** — covers `safe_exp`, `sigmoid`, `softmax`, and `Parser` behavior (`parse_model_outputs.py`), including binary and categorical cross-entropy and MDN parsing.
+#### What we learned about pytest in this repo
 
-**Merge note:** `test_parse_model_outputs.py` also exists on `master` from this sprint. When JP’s branch merges, Git may report conflicts in that file; combine both test suites or deduplicate cases as a team.
+- **`conftest.py` at repo root** has `collect_ignore_glob = ["selfdrive/modeld/*.py"]`. This ignores `.py` files **directly** in `selfdrive/modeld/` (like `modeld.py`, `constants.py`) to prevent them being collected as tests. But it does **NOT** match `selfdrive/modeld/tests/*.py` -- that extra `tests/` directory means our test files are collected normally.
+- **Autouse fixtures** run on every test automatically:
+  - `openpilot_function_fixture` (function scope) -- sets `random.seed(0)`, creates a clean `OpenpilotPrefix` temp directory, runs `manager.manager_cleanup()` after. This is fine for pure numpy tests.
+  - `openpilot_class_fixture` (class scope) -- saves/restores environment variables.
+- **`-Werror`** is set in `pyproject.toml` -- any Python warning becomes a test failure. Avoid deprecated APIs.
+- **`-n auto`** runs tests in parallel with pytest-xdist. Pure functions with no shared global state are safe.
+- **`testpaths`** in `pyproject.toml` includes `"selfdrive"`, so `selfdrive/modeld/tests/` is automatically in scope.
 
-**Optional CI on JP’s branch:** `.github/workflows/our_tests.yaml` builds the repo and runs only the two test files above (fork must have GitHub Actions enabled).
-
-**How to run JP’s tests (repo root, Python env active):**
-
+#### How to run just our tests
 ```bash
 pytest selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_constants.py -v
 ```
-
-**Presenter tip:** Show pytest output or a short screen recording instead of pasting a long log. Last local run: **67 passed**.
-
 ---
 
 ## How we validated it
