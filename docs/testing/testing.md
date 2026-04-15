@@ -36,3 +36,7 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 Each should report no tests collected and exit successfully until you add `test_*.py` files there. Fixtures from both `support/fixtures.py` modules load globally via root `pytest_plugins` (`openpilot_params_seeded`, `system_daemon_params`, etc.).
 
+**Modeld coverage comparison (opt-in):**
+
+* `bash scripts/testing/compare_coverage.sh --cov-target selfdrive/modeld --baseline "selfdrive/modeld/tests/test_modeld.py" --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"`
+
