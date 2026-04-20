@@ -133,3 +133,32 @@ TEST_CASE("send/recv CAN FD packets") {
     test.test_can_recv(0x40);
   }
 }
+
+TEST_CASE("send/recv empty CAN packet list") {
+  PandaTest test(0, cereal::PandaState::PandaType::DOS);
+
+  SECTION("empty_can_send") {
+    test.test_can_send();
+  }
+  SECTION("empty_can_receive") {
+    test.test_can_recv();
+  }
+}
+
+TEST_CASE("recv CAN packets with 1-byte chunks") {
+  auto can_list_size = GENERATE(1, 5, 30);
+  PandaTest test(can_list_size, cereal::PandaState::PandaType::DOS);
+
+  SECTION("tiny_chunked_can_receive") {
+    test.test_can_recv(1);
+  }
+}
+
+TEST_CASE("recv CAN FD packets with 1-byte chunks") {
+  auto can_list_size = GENERATE(1, 5, 30);
+  PandaTest test(can_list_size, cereal::PandaState::PandaType::RED_PANDA);
+
+  SECTION("tiny_chunked_canfd_receive") {
+    test.test_can_recv(1);
+  }
+}
