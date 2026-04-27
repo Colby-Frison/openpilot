@@ -36,9 +36,14 @@ jobs:
         source .venv/bin/activate
         scons -j$(nproc)
 
-    - name: Run our modeld unit tests
+    - name: Run our modeld and pandad unit tests
       run: |
+        set -e
         source .venv/bin/activate
-        python -m pytest selfdrive/modeld/tests/test_parse_model_outputs.py \
-                         selfdrive/modeld/tests/test_constants.py \
-                         -v --tb=short -x
+        # Course-owned tests (no device); align with docs/testing/TESTING-TRACKER.md
+        python -m pytest \
+          selfdrive/modeld/tests/test_parse_model_outputs.py \
+          selfdrive/modeld/tests/test_constants.py \
+          selfdrive/pandad/tests/test_pandad_flash.py \
+          selfdrive/pandad/tests/test_pandad_pandad_wrapper.py \
+          -v --tb=short --maxfail=5

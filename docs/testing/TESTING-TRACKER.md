@@ -97,6 +97,23 @@ Priorities from [LOW-LEVEL §4.3](LOW-LEVEL-TEST-PLAN.md#43-system).
 
 ---
 
+## GitHub Actions (CI)
+
+Upstream openpilot runs a **large** `selfdrive` workflow (Docker image `ghcr.io/commaai/openpilot-base`, scons in container, `PYTHONWARNINGS=error`, `pytest` with coverage, process replay, car model matrices, static analysis, macOS build, etc.). On a **class / team fork** (e.g. `Colby-Frison/openpilot`), the same job definitions often **fail** for reasons that are not about your new tests: missing `CODECOV_TOKEN`, `AZURE_COMMADATACI_*` secrets, smaller runners, Docker pull limits, or download caches.
+
+| Workflow / file | What it is | Expectation on team fork | Course signal |
+|-------------------|------------|---------------------------|---------------|
+| [`.github/workflows/our_tests.yaml`](../../.github/workflows/our_tests.yaml) | `our-tests` — native Ubuntu, deps + full `scons` + **pytest** (modeld + pandad course tests) | **Should** pass if `main` + tests are consistent | **Primary** “green” for authored tests |
+| [`.github/workflows/selfdrive_tests.yaml`](../../.github/workflows/selfdrive_tests.yaml) | `selfdrive` — build, static analysis, unit + replay + cars + UI report | **Skipped** on pushes/PRs that only use a team fork as **base** (e.g. `Colby-Frison` → `Colby-Frison`). **Runs** on `commaai/openpilot` and on **PRs into** `commaai/openpilot` (incl. from a fork). | Match upstream on PRs to comma; for fork-only branches rely on `our-tests`. |
+| [`.github/workflows/docs.yaml`](../../.github/workflows/docs.yaml) | Docs build | Usually passes | Light check |
+| `ui_preview`, `PR comments` | Often **skipped** by `if` / draft | N/A | N/A |
+
+**Local equivalents (before push):** `scons` + `pytest` for the same paths as `our_tests.yaml`; optional `tools/op.sh lint` and `selfdrive/pandad/tests/test_pandad_usbprotocol` after `scons` when touching C++.
+
+**Note:** Merging a PR **into** `commaai/openpilot` will still run the full `selfdrive` suite on the **main** repository with proper secrets; fork-only CI is intentionally **narrower** so the team is not blocked by infrastructure.
+
+---
+
 ## Nonfunctional themes (STP §7.2)
 
 Track as **additional cases** in the rows above, not as orphan workstreams.
@@ -119,3 +136,4 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-20 | Added system + selfdrive support harness tests and pandad `test_pandad_can_capnp.py`. |
 | 2026-04-20 | Expanded pandad STP-aligned desktop tests (`test_pandad_can_capnp.py`, `test_pandad_pandad_wrapper.py`). |
 | 2026-04-25 | Pandad: `test_pandad_flash.py` for `flash_panda()`; USB gtest sections `incomplete_receive_buffering` + `bus_filtering` in `test_pandad_usbprotocol.cc`. |
+| 2026-04-26 | Document GitHub Actions: fork vs `commaai` CI; `our_tests` widened; `selfdrive` jobs gated to upstream + optional dispatch; Codecov `fail_ci_if_error: false` on unit/replay/cars. |
