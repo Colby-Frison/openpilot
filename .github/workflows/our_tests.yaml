@@ -1,0 +1,44 @@
+name: our-tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run-our-tests:
+    name: Run our unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Pull LFS files
+      run: |
+        git lfs install
+        git lfs pull
+
+    - name: Install system dependencies
+      run: |
+        tools/install_ubuntu_dependencies.sh
+
+    - name: Install Python dependencies
+      run: |
+        tools/install_python_dependencies.sh
+
+    - name: Build openpilot
+      run: |
+        source .venv/bin/activate
+        scons -j$(nproc)
+
+    - name: Run our modeld unit tests
+      run: |
+        source .venv/bin/activate
+        python -m pytest selfdrive/modeld/tests/test_parse_model_outputs.py \
+                         selfdrive/modeld/tests/test_constants.py \
+                         -v --tb=short -x

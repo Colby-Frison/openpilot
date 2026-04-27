@@ -124,7 +124,7 @@ python -m pytest system/tests/support/tests -q
 
 ### 4.2 `selfdrive/pandad` (assignment files only)
 
-**Existing anchors:** `test_pandad.py` (hardware), `test_pandad_loopback.py`, `test_pandad_spi.py`, `test_pandad_usbprotocol.cc`.
+**Existing anchors:** `test_pandad.py` (hardware), `test_pandad_loopback.py`, `test_pandad_spi.py`, `test_pandad_usbprotocol.cc` (SCons gtest), `test_pandad_can_capnp_*.py` / `test_pandad_pandad_wrapper.py` / `test_pandad_flash.py` (pytest, desktop).
 
 | Priority | Type | Focus | Maps to |
 |----------|------|--------|---------|
@@ -166,8 +166,8 @@ Use this when opening PRs or writing the test section of tickets.
 | Risk | Meaning (short) | Primary existing evidence | Typical new work |
 |------|------------------|---------------------------|------------------|
 | R1 | modeld stale/mismatched outputs | `test_modeld.py` | More edge cases; parser unit tests if in scope |
-| R2 | Pandad safety mode / heartbeat | `test_pandad.py`, loopback | Assertions on safety-related messaging where observable |
-| R3 | Transport / Cython boundary | SPI, USB gtest, loopback | Targeted fault and boundary tests |
+| R2 | Pandad safety mode / heartbeat | `test_pandad.py`, loopback; `test_pandad_flash.py` (signature / flash path, mocked) | Full safety mode on device; more heartbeat assertions if observable |
+| R3 | Transport / Cython boundary | SPI, USB gtest (incl. incomplete buffer / bus filter in `test_pandad_usbprotocol.cc`), loopback | `spi.cc` / Cython paths on device or further mocks |
 | R4 | Manager orchestration | `system/manager/test/test_manager.py` | Restart/kill scenarios if allowed by env |
 | R5 | Logger integrity | `system/loggerd/tests/*` | Corruption / backpressure cases |
 | R6 | Athena / webrtc misuse | `system/athena/tests/*`, `system/webrtc/tests/*` | Additional mock server cases |
@@ -188,7 +188,7 @@ Run from repository root with the same `PYTHONPATH` / venv the project expects (
 # Full Python suite (heavy; matches broad CI intent)
 pytest
 
-# Shared support harnesses (empty until you add tests; exit 0)
+# Shared support harnesses (smoke tests + optional empty-dir exit 0)
 pytest selfdrive/test/support/tests
 pytest system/tests/support/tests
 
@@ -199,14 +199,22 @@ pytest selfdrive/modeld/tests/
 pytest selfdrive/modeld/tests/test_parse_model_outputs.py -q
 pytest selfdrive/modeld/tests/test_fill_model_msg.py -q
 pytest selfdrive/modeld/tests/test_modeld.py -q
+pytest selfdrive/modeld/tests/test_modeld_phase_c_contracts.py -q
 
-# Coverage comparison: baseline/original vs new modeld tests (opt-in)
+# Coverage comparison: baseline/original vs new modeld tests (opt-in).
+# The script defaults to the same --ours list, pytest -n 0, and coverage-modeld-compare.ini
+# (omit tests/, modeld.py, dmonitoringmodeld.py for a stable library-focused report).
 bash scripts/testing/compare_coverage.sh \
   --cov-target selfdrive/modeld \
   --baseline "selfdrive/modeld/tests/test_modeld.py" \
-  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_fill_model_msg.py"
+  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_parse_model_outputs_vision_contracts.py selfdrive/modeld/tests/test_parse_model_outputs_policy_contracts.py selfdrive/modeld/tests/test_fill_model_msg.py selfdrive/modeld/tests/test_fill_model_msg_frame_ids.py selfdrive/modeld/tests/test_fill_model_msg_modelv2_dimensions.py selfdrive/modeld/tests/test_fill_model_msg_pose_odometry.py selfdrive/modeld/tests/test_fill_model_msg_driving_model_data.py selfdrive/modeld/tests/test_fill_model_msg_raw_predictions.py selfdrive/modeld/tests/test_fill_model_msg_fcw_hard_brake.py selfdrive/modeld/tests/test_get_model_metadata_unit.py selfdrive/modeld/tests/test_modeld_phase_c_contracts.py"
 
-# Pandad Python tests (prefer explicit files; test_pandad.py is device-heavy / tici)
+# Pandad — desktop (no hardware)
+pytest selfdrive/pandad/tests/test_pandad_can_capnp_*.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py selfdrive/pandad/tests/test_pandad_flash.py -q
+scons -j8 selfdrive/pandad/tests/test_pandad_usbprotocol
+./selfdrive/pandad/tests/test_pandad_usbprotocol
+
+# Pandad — integration / device (test_pandad.py is device-heavy / tici)
 pytest selfdrive/pandad/tests/test_pandad_loopback.py
 pytest selfdrive/pandad/tests/test_pandad_spi.py
 pytest selfdrive/pandad/tests/test_pandad.py   # on TICI or when marked tests are not skipped
@@ -241,7 +249,7 @@ Native gtests are invoked via the build system after `scons` (or the component�
 
 - [ ] Phase A parser tests pass standalone (`test_parse_model_outputs.py`) on WSL without starting managed daemons.
 - [ ] Phase B message-mapping tests pass standalone (`test_fill_model_msg.py`) and validate `ModelConstants`-driven array lengths.
-- [ ] Phase C daemon contract tests pass (`test_modeld.py`) with no new flakiness.
+- [ ] Phase C daemon contract tests pass (`test_modeld.py`, `test_modeld_phase_c_contracts.py`; latter skips if modeld never publishes) with no new flakiness.
 - [ ] Coverage comparison script outputs both reports (`baseline`, `ours`) under `.coverage-compare/modeld/`.
 - [ ] Combined modeld suite passes before merge: `pytest selfdrive/modeld/tests -q`.
 
