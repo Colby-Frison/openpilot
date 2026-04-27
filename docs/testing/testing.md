@@ -22,8 +22,8 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 **Pandad — desktop verification aligned with the STP** ([testing-plan/TESTING-PLAN.md](testing-plan/TESTING-PLAN.md) §3.1 unit / §3.3 boundary, risks R2–R3):
 
-* `pytest selfdrive/pandad/tests/test_pandad_can_capnp_*.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py -q` — Cython CAN serialization (split: roundtrip / event validity / multiblob) and `pandad.py` signature helper (no Panda hardware).
-* Native Catch2 USB protocol tests remain in `test_pandad_usbprotocol.cc` (built via SCons); integration and SPI fault-injection stay in `test_pandad_loopback.py` / `test_pandad_spi.py` (`@pytest.mark.tici`).
+* `pytest selfdrive/pandad/tests/test_pandad_can_capnp_*.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py selfdrive/pandad/tests/test_pandad_flash.py -q` — Cython CAN serialization (split: roundtrip / event validity / multiblob), `pandad.py` `get_expected_signature` / `flash_panda` (mocked; no Panda hardware).
+* Native Catch2 USB protocol tests: `scons -j8 selfdrive/pandad/tests/test_pandad_usbprotocol` then `selfdrive/pandad/tests/test_pandad_usbprotocol` (incomplete receive buffering, bus filtering, and existing pack/unpack cases). Loopback and SPI fault-injection stay in `test_pandad_loopback.py` / `test_pandad_spi.py` (`@pytest.mark.tici`).
 
 # Directories
 

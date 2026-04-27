@@ -128,7 +128,7 @@ void PandaTest::test_incomplete_can_recv() {
   REQUIRE(frames.empty());
   REQUIRE(partial_size > 0);
 
-  // Provide the missing trailing byte and validate that all frames decode.
+  // Provide the missing trailing byte and validate that the frame decodes.
   this->receive_buffer[partial_size] = packed_data.back();
   partial_size += 1;
   REQUIRE(this->unpack_can_buffer(this->receive_buffer, partial_size, frames));

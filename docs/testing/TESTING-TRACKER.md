@@ -19,8 +19,8 @@
 
 | Subsystem | Done (high level) | Open / next |
 |-----------|-------------------|-------------|
-| modeld | Phase B/B+, Phase C contracts + timeliness subtest; upstream anchor unchanged | Coverage compare opt-in; full `pytest selfdrive/modeld/tests` gate |
-| pandad | STP-aligned desktop units (``pandad.py``, ``pandad_api_impl``); upstream gtest / `tici` integration | USB/gtest edges; optional non-`tici` loopback/SPI shims |
+| modeld | Parser unit suite; fill + integration test files exist | Extend fill/integration coverage; optional timing tests |
+| pandad | USB/gtest edge cases; ``flash_panda`` unit tests; STP desktop units (``pandad.py`` wrappers, ``pandad_api_impl``); upstream gtest / `tici` integration | loopback / SPI shims; device `tici` cases |
 | system | Upstream tests per component | Team-owned extensions per LOW §4.3 P0–P2 |
 | Infra | Shared `support/` packages + pytest plugins; harness smoke + multi-service IPC | Extend harness or extract duplicated setup |
 
@@ -55,7 +55,8 @@ Aligned with [LOW-LEVEL §7.1](LOW-LEVEL-TEST-PLAN.md#71-modeld-rollout-gates) r
 |--------|------|----------|
 | [x] | CAN capnp serialization split by concern — skips if Cython ext missing | `test_pandad_can_capnp_roundtrip.py`, `test_pandad_can_capnp_event_validity.py`, `test_pandad_can_capnp_multiblob.py` |
 | [x] | ``pandad.py`` ``get_expected_signature`` success and error paths (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
-| [ ] | Extra USB protocol / buffer edge cases | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` |
+| [x] | ``pandad.py`` ``flash_panda`` paths: no update, signature mismatch + flash, bootstub failure, post-flash mismatch (mocked device) | `selfdrive/pandad/tests/test_pandad_flash.py` |
+| [x] | Extra USB protocol / buffer edge cases: incomplete receive reassembly, bus ownership filtering in ``pack_can_buffer``; rebuild with `scons selfdrive/pandad/tests/test_pandad_usbprotocol` | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` |
 | [ ] | Additional loopback / transport integrity | `selfdrive/pandad/tests/test_pandad_loopback.py` |
 | [ ] | SPI fault-injection / retry coverage | `selfdrive/pandad/tests/test_pandad_spi.py` |
 | [ ] | Device-heavy recovery / safety-adjacent (`tici` as required) | `selfdrive/pandad/tests/test_pandad.py` |
@@ -117,7 +118,4 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-20 | Initial tracker; Phase A modeld parser suite marked done. |
 | 2026-04-20 | Added system + selfdrive support harness tests and pandad `test_pandad_can_capnp.py`. |
 | 2026-04-20 | Expanded pandad STP-aligned desktop tests (`test_pandad_can_capnp.py`, `test_pandad_pandad_wrapper.py`). |
-| 2026-04-24 | Split pandad CAN tests into `test_pandad_can_capnp_*.py`; added modeld fill contracts + `modeld_test_fixtures.py`; added system multi-service harness test. |
-| 2026-04-24 | Modeld: `modeld_parse_fixtures`, vision/policy parser contracts, `fill_pose_msg`, drivingModelData, `SEND_RAW_PRED` tests. |
-| 2026-04-24 | Modeld Phase C: `test_modeld_phase_c_contracts.py` (daemon contracts; skips if modeld never publishes). |
-| 2026-04-24 | Modeld Phase B+ marked done (deeper fill/parser assertions); Phase C extended (`drivingModelData` lock + timeliness subtest); anchor `test_modeld.py` left unchanged. |
+| 2026-04-25 | Pandad: `test_pandad_flash.py` for `flash_panda()`; USB gtest sections `incomplete_receive_buffering` + `bus_filtering` in `test_pandad_usbprotocol.cc`. |
