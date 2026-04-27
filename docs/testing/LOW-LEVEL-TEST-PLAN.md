@@ -201,13 +201,19 @@ pytest selfdrive/modeld/tests/test_fill_model_msg.py -q
 pytest selfdrive/modeld/tests/test_modeld.py -q
 pytest selfdrive/modeld/tests/test_modeld_phase_c_contracts.py -q
 
-# Coverage comparison: baseline/original vs new modeld tests (opt-in).
-# The script defaults to the same --ours list, pytest -n 0, and coverage-modeld-compare.ini
-# (omit tests/, modeld.py, dmonitoringmodeld.py for a stable library-focused report).
+# Coverage comparison by profile (assignment targets)
+bash scripts/testing/compare_coverage.sh --profile modeld
+bash scripts/testing/compare_coverage.sh --profile pandad
+bash scripts/testing/compare_coverage.sh --profile system
+# or run all three in sequence
+bash scripts/testing/compare_coverage.sh --all-profiles
+
+# Override defaults (example: modeld)
 bash scripts/testing/compare_coverage.sh \
+  --profile modeld \
   --cov-target selfdrive/modeld \
   --baseline "selfdrive/modeld/tests/test_modeld.py" \
-  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_parse_model_outputs_vision_contracts.py selfdrive/modeld/tests/test_parse_model_outputs_policy_contracts.py selfdrive/modeld/tests/test_fill_model_msg.py selfdrive/modeld/tests/test_fill_model_msg_frame_ids.py selfdrive/modeld/tests/test_fill_model_msg_modelv2_dimensions.py selfdrive/modeld/tests/test_fill_model_msg_pose_odometry.py selfdrive/modeld/tests/test_fill_model_msg_driving_model_data.py selfdrive/modeld/tests/test_fill_model_msg_raw_predictions.py selfdrive/modeld/tests/test_fill_model_msg_fcw_hard_brake.py selfdrive/modeld/tests/test_get_model_metadata_unit.py selfdrive/modeld/tests/test_modeld_phase_c_contracts.py"
+  --ours "selfdrive/modeld/tests/test_parse_model_outputs.py selfdrive/modeld/tests/test_parse_model_outputs_vision_contracts.py selfdrive/modeld/tests/test_parse_model_outputs_policy_contracts.py selfdrive/modeld/tests/test_fill_model_msg.py selfdrive/modeld/tests/test_fill_model_msg_frame_ids.py selfdrive/modeld/tests/test_fill_model_msg_modelv2_dimensions.py selfdrive/modeld/tests/test_fill_model_msg_pose_odometry.py selfdrive/modeld/tests/test_fill_model_msg_driving_model_data.py selfdrive/modeld/tests/test_fill_model_msg_raw_predictions.py selfdrive/modeld/tests/test_fill_model_msg_fcw_hard_brake.py selfdrive/modeld/tests/test_get_model_metadata_unit.py selfdrive/modeld/tests/test_modeld_package_surfaces.py selfdrive/modeld/tests/test_modeld_phase_c_contracts.py"
 
 # Pandad — desktop (no hardware)
 pytest selfdrive/pandad/tests/test_pandad_can_capnp_*.py selfdrive/pandad/tests/test_pandad_pandad_wrapper.py selfdrive/pandad/tests/test_pandad_flash.py -q
@@ -221,6 +227,9 @@ pytest selfdrive/pandad/tests/test_pandad.py   # on TICI or when marked tests ar
 
 # Manager
 pytest system/manager/test/
+
+# System — contract tests (desktop-safe; see docs/testing/SYSTEM-TESTING.md)
+pytest system/tests/contract -q
 
 # Loggerd
 pytest system/loggerd/tests/

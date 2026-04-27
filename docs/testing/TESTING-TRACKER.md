@@ -100,7 +100,10 @@ Priorities from [LOW-LEVEL §4.3](LOW-LEVEL-TEST-PLAN.md#43-system).
 | Priority | Status | Item | Location |
 |----------|--------|------|----------|
 | P0 | [ ] | Manager lifecycle / graph (restart-kill-reconnect if env allows) | `system/manager/test/` |
+| P0 | [~] | Manager **config / gating** contracts (desktop; no process start) | `system/tests/contract/test_manager_process_config_contracts.py` + [SYSTEM-TESTING.md](SYSTEM-TESTING.md) |
 | P0 | [ ] | Logger encode / delete / backpressure or corruption scenarios | `system/loggerd/tests/` |
+| P1 | [~] | Cereal pub/sub smoke under ``SIMULATION`` (harness reuse) | `system/tests/contract/test_messaging_simulation_contract.py` |
+| P1 | [~] | Additional contract coverage (manager/build/timed/tombstoned/athenad helpers/snapshot/power monitor/agnos helpers) | `system/tests/contract/test_*_contracts.py` |
 | P1 | [ ] | Athena session / auth / failure (mocked) | `system/athena/tests/` |
 | P1 | [ ] | WebRTC session / failure modes | `system/webrtc/tests/` |
 | P1 | [ ] | Camera timing regression (`slow` / `tici` as needed) | `system/camerad/test/` |
@@ -163,6 +166,13 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-20 | Initial tracker; Phase A modeld parser suite marked done. |
 | 2026-04-20 | Added system + selfdrive support harness tests and pandad `test_pandad_can_capnp.py`. |
 | 2026-04-20 | Expanded pandad STP-aligned desktop tests (`test_pandad_can_capnp.py`, `test_pandad_pandad_wrapper.py`). |
+| 2026-04-24 | Split pandad CAN tests into `test_pandad_can_capnp_*.py`; added modeld fill contracts + `modeld_test_fixtures.py`; added system multi-service harness test. |
+| 2026-04-24 | Modeld: `modeld_parse_fixtures`, vision/policy parser contracts, `fill_pose_msg`, drivingModelData, `SEND_RAW_PRED` tests. |
+| 2026-04-24 | Modeld Phase C: `test_modeld_phase_c_contracts.py` (daemon contracts; skips if modeld never publishes). |
+| 2026-04-24 | Modeld Phase B+ marked done (deeper fill/parser assertions); Phase C extended (`drivingModelData` lock + timeliness subtest); anchor `test_modeld.py` left unchanged. |
+| 2026-04-24 | System: `docs/testing/SYSTEM-TESTING.md` + `system/tests/contract/` (manager predicates, messaging simulation); renamed from `course/`. |
+| 2026-04-24 | System contract suite expanded: manager/build/timed/tombstoned/athenad/snapshot/power-monitor/agnos helpers; documented non-contractable device/network files. |
+| 2026-04-24 | System contract pass 2: added `athenad` queue/upload helper contracts and `agnos` partition helper contracts; coverage compare now shows `ours` > `baseline` for system profile. |
 | 2026-04-25 | Pandad: `test_pandad_flash.py` for `flash_panda()`; USB gtest sections `incomplete_receive_buffering` + `bus_filtering` in `test_pandad_usbprotocol.cc`. |
 | 2026-04-26 | Document GitHub Actions: fork vs `commaai` CI; `our_tests` widened; `selfdrive` jobs gated to upstream + optional dispatch; Codecov `fail_ci_if_error: false` on unit/replay/cars. |
 | 2026-04-27 | Pandad: section “finished” — A vs B (desktop done vs device deferred); local verification block; summary row updated. `our_tests.yaml` pytest list aligned with pandad capnp split files. |

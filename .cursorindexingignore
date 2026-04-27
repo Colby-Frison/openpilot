@@ -1,0 +1,15 @@
+cereal/
+common/
+docs/
+msgp_repo/
+opendbc_repo/
+openpilot/
+panda/
+rednose/
+release/
+scripts/
+site_scons/
+teleoprtc_repo/
+third_part/
+tinygrad_repo/
+tools/
