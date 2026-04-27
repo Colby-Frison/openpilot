@@ -21,7 +21,7 @@
 |-----------|-------------------|-------------|
 | modeld | Phase B/B+, Phase C contracts + timeliness subtest; upstream anchor unchanged | Coverage compare opt-in; full `pytest selfdrive/modeld/tests` gate |
 | pandad | STP-aligned desktop units (``pandad.py``, ``pandad_api_impl``); upstream gtest / `tici` integration | USB/gtest edges; optional non-`tici` loopback/SPI shims |
-| system | Upstream tests per component | Team-owned extensions per LOW §4.3 P0–P2 |
+| system | [SYSTEM-TESTING.md](SYSTEM-TESTING.md) + ``system/tests/contract/``; harness under ``system/tests/support/`` | P0 manager/loggerd depth; P1 athena/webrtc helper mocks; document device-only gaps (esim/power measure) |
 | Infra | Shared `support/` packages + pytest plugins; harness smoke + multi-service IPC | Extend harness or extract duplicated setup |
 
 ---
@@ -71,7 +71,10 @@ Priorities from [LOW-LEVEL §4.3](LOW-LEVEL-TEST-PLAN.md#43-system).
 | Priority | Status | Item | Location |
 |----------|--------|------|----------|
 | P0 | [ ] | Manager lifecycle / graph (restart-kill-reconnect if env allows) | `system/manager/test/` |
+| P0 | [~] | Manager **config / gating** contracts (desktop; no process start) | `system/tests/contract/test_manager_process_config_contracts.py` + [SYSTEM-TESTING.md](SYSTEM-TESTING.md) |
 | P0 | [ ] | Logger encode / delete / backpressure or corruption scenarios | `system/loggerd/tests/` |
+| P1 | [~] | Cereal pub/sub smoke under ``SIMULATION`` (harness reuse) | `system/tests/contract/test_messaging_simulation_contract.py` |
+| P1 | [~] | Additional contract coverage (manager/build/timed/tombstoned/athenad helpers/snapshot/power monitor/agnos helpers) | `system/tests/contract/test_*_contracts.py` |
 | P1 | [ ] | Athena session / auth / failure (mocked) | `system/athena/tests/` |
 | P1 | [ ] | WebRTC session / failure modes | `system/webrtc/tests/` |
 | P1 | [ ] | Camera timing regression (`slow` / `tici` as needed) | `system/camerad/test/` |
@@ -121,3 +124,6 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-24 | Modeld: `modeld_parse_fixtures`, vision/policy parser contracts, `fill_pose_msg`, drivingModelData, `SEND_RAW_PRED` tests. |
 | 2026-04-24 | Modeld Phase C: `test_modeld_phase_c_contracts.py` (daemon contracts; skips if modeld never publishes). |
 | 2026-04-24 | Modeld Phase B+ marked done (deeper fill/parser assertions); Phase C extended (`drivingModelData` lock + timeliness subtest); anchor `test_modeld.py` left unchanged. |
+| 2026-04-24 | System: `docs/testing/SYSTEM-TESTING.md` + `system/tests/contract/` (manager predicates, messaging simulation); renamed from `course/`. |
+| 2026-04-24 | System contract suite expanded: manager/build/timed/tombstoned/athenad/snapshot/power-monitor/agnos helpers; documented non-contractable device/network files. |
+| 2026-04-24 | System contract pass 2: added `athenad` queue/upload helper contracts and `agnos` partition helper contracts; coverage compare now shows `ours` > `baseline` for system profile. |

@@ -230,6 +230,6 @@ This infrastructure is **Python / pytest**. C++ gtests (for example under `selfd
 
 ## 10. Further reading
 
-* [testing.md](testing.md) — index and quick commands  
-* [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md) — commands, risk matrix, definition of done  
-* [TESTING-PLAN.md](testing-plan/TESTING-PLAN.md) — strategy, verification and validation, priorities  
+* [testing.md](testing.md) — index and quick commands
+* [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md) — commands, risk matrix, definition of done
+* [TESTING-PLAN.md](testing-plan/TESTING-PLAN.md) — strategy, verification and validation, priorities

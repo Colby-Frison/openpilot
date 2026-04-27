@@ -6,6 +6,7 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 * [Testing tracker](#testing-tracker)
 * [Infrastructure overview](#infrastructure-overview)
 * [Low-level test plan](#low-level-test-plan)
+* [System testing (contracts)](#system-testing-contracts)
 * [modeld implementation summary](#modeld-implementation-summary)
 * [Weekly presentation script](#weekly-presentation-script)
 
@@ -41,6 +42,12 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 * [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md): Tactical guide aligned with the STP—repository pytest/native conventions, phased shared infrastructure (`selfdrive/test/support/` and `system/tests/support/`), per-subsystem work breakdown, risk traceability (R1–R10), and scoped commands.
 
+# System testing (contracts)
+
+* [SYSTEM-TESTING.md](SYSTEM-TESTING.md): How `system/` is tested—**sparse contract tests** under `system/tests/contract/`, desktop vs **TICI** boundaries, markers, `SIMULATION` / harness fixtures, and pointers to upstream `system/manager/test/`, `system/loggerd/tests/`, etc.
+* Directory map for `system/tests/` (`support/` vs `support/tests/` vs `contract/`): [system/tests/README.md](../../system/tests/README.md).
+* Quick run: `pytest system/tests/contract -q`
+
 **Modeld Phase C (extra daemon contracts):** `pytest selfdrive/modeld/tests/test_modeld_phase_c_contracts.py -q` — extends §7.1 with subtests; skips if `modeld` never publishes in the environment (anchor `test_modeld.py` unchanged).
 
 **Support harnesses (fixtures + plug-in smoke tests):**
@@ -50,11 +57,13 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 If both directories are empty again, their `conftest.py` hooks still map “no tests collected” to exit 0. Fixtures from both `support/fixtures.py` modules load globally via root `pytest_plugins` (`openpilot_params_seeded`, `system_daemon_params`, etc.).
 
-**Modeld coverage comparison (opt-in):**
+**Coverage comparison (assignment targets, opt-in):**
 
-* Run `scripts/testing/compare_coverage.sh` (executable bit required, or `bash scripts/testing/compare_coverage.sh`). The script passes `scripts/testing/coverage-modeld-compare.ini` (omit **`tests/`**, **`modeld.py`**, **`dmonitoringmodeld.py`**) and runs pytest **`-n 0`** so pytest-cov does not scatter traces across xdist workers (which previously let test modules appear in HTML).
-* Default `--ours` in the script matches [LOW-LEVEL-TEST-PLAN.md](LOW-LEVEL-TEST-PLAN.md) §6 plus FCW / `get_model_metadata` helpers; override with `--ours "..."` when needed.
-* **`modeld.py`** / **`dmonitoringmodeld.py`** are omitted from this report by design (subprocess entrypoints). **`get_model_metadata.py`** is covered by `test_get_model_metadata_unit.py` (helpers only; the `if __name__ == "__main__"` block is CLI-only).
+* Run `scripts/testing/compare_coverage.sh --profile modeld`, `--profile pandad`, or `--profile system`; use `--all-profiles` to run all three sequentially.
+* Each profile uses a dedicated config (`coverage-modeld-compare.ini`, `coverage-pandad-compare.ini`, `coverage-system-compare.ini`) and runs pytest with `-n 0` for stable combine.
+* For `modeld`, baseline defaults to **anchor-only** (`test_modeld.py`) so baseline/ours separation stays strict.
+* You can override defaults with `--cov-target`, `--baseline`, `--ours`, `--out-dir`, and `--cov-config` for ad-hoc analysis.
+* `system` profile defaults intentionally exclude `system/webrtc/tests/test_webrtcd.py` (network/ICE timeout-prone on some desktop environments). Opt in by appending it to `--baseline`.
 
 # modeld implementation summary
 
