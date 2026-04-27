@@ -19,6 +19,8 @@ jobs:
         submodules: true
 
     - name: Pull LFS files
+      # Forks may get 404 from gitlab LFS; allow job to continue (scons may still need assets)
+      continue-on-error: true
       run: |
         git lfs install
         git lfs pull
