@@ -12,6 +12,7 @@
 - Use `Maps: R#` in new test docstrings (see LOW-LEVEL §Phase 0).
 - Mark items `[x]` when merged and stable in `main` (or your integration branch).
 - Mark items `[~]` for in-progress (optional; or use a short note under the item).
+- Mark `[-]` when an item is **deferred** (e.g. needs hardware) rather than a remaining task for the current milestone.
 
 ---
 
@@ -20,7 +21,7 @@
 | Subsystem | Done (high level) | Open / next |
 |-----------|-------------------|-------------|
 | modeld | Parser unit suite; fill + integration test files exist | Extend fill/integration coverage; optional timing tests |
-| pandad | USB/gtest edge cases; ``flash_panda`` unit tests; STP desktop units (``pandad.py`` wrappers, ``pandad_api_impl``); upstream gtest / `tici` integration | loopback / SPI shims; device `tici` cases |
+| pandad | **Desktop / course scope complete:** CAN capnp split tests; ``pandad.py`` wrapper + ``flash_panda``; USB gtest (pack/unpack + incomplete buffer + bus filter); in ``our_tests`` CI | **Out of course gate:** loopback, SPI, ``test_pandad`` need real pandas + ``tici`` (see below) |
 | system | Upstream tests per component | Team-owned extensions per LOW §4.3 P0–P2 |
 | Infra | Shared `support/` packages + pytest plugins; harness smoke + multi-service IPC | Extend harness or extract duplicated setup |
 
@@ -51,17 +52,44 @@ Aligned with [LOW-LEVEL §7.1](LOW-LEVEL-TEST-PLAN.md#71-modeld-rollout-gates) r
 
 ## pandad (assignment-scoped files)
 
-| Status | Item | Location |
-|--------|------|----------|
-| [x] | CAN capnp serialization split by concern — skips if Cython ext missing | `test_pandad_can_capnp_roundtrip.py`, `test_pandad_can_capnp_event_validity.py`, `test_pandad_can_capnp_multiblob.py` |
-| [x] | ``pandad.py`` ``get_expected_signature`` success and error paths (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
-| [x] | ``pandad.py`` ``flash_panda`` paths: no update, signature mismatch + flash, bootstub failure, post-flash mismatch (mocked device) | `selfdrive/pandad/tests/test_pandad_flash.py` |
-| [x] | Extra USB protocol / buffer edge cases: incomplete receive reassembly, bus ownership filtering in ``pack_can_buffer``; rebuild with `scons selfdrive/pandad/tests/test_pandad_usbprotocol` | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` |
-| [ ] | Additional loopback / transport integrity | `selfdrive/pandad/tests/test_pandad_loopback.py` |
-| [ ] | SPI fault-injection / retry coverage | `selfdrive/pandad/tests/test_pandad_spi.py` |
-| [ ] | Device-heavy recovery / safety-adjacent (`tici` as required) | `selfdrive/pandad/tests/test_pandad.py` |
+**Definition of done (course / STP desktop):** all rows in **A** are `[x]`. The three rows in **B** are **existing upstream** suites that need **Comma device / multiple pandas**; they are **not** a failing checklist for this fork—**deferred** unless the team runs them on `tici` hardware.
 
-**Maps:** R2, R3 (and R2 for device safety flows).
+### A — Desktop (no Panda bus), course gate in [`our_tests.yaml`](../../.github/workflows/our_tests.yaml) + gtest binary
+
+| Status | Item | Location / how to run |
+|--------|------|-------------------------|
+| [x] | CAN capnp serialization (split: roundtrip, event validity, multiblob) — skips if Cython ext missing | `test_pandad_can_capnp_roundtrip.py`, `test_pandad_can_capnp_event_validity.py`, `test_pandad_can_capnp_multiblob.py` |
+| [x] | ``pandad.py`` ``get_expected_signature`` (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
+| [x] | ``pandad.py`` ``flash_panda`` (mocked device: no-op, reflash, bootstub, post-flash mismatch) | `selfdrive/pandad/tests/test_pandad_flash.py` |
+| [x] | USB protocol gtest: pack/unpack (parameterized) + **incomplete receive reassembly** + **bus filter** in ``pack_can_buffer`` | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` — `scons -j8 selfdrive/pandad/tests/test_pandad_usbprotocol` then `selfdrive/pandad/tests/test_pandad_usbprotocol` |
+
+**One-shot local verification (matches CI intent):**
+
+```bash
+# Pytest (after venv + scons; same set as our-tests workflow for pandad+modeld)
+source .venv/bin/activate
+python -m pytest \
+  selfdrive/modeld/tests/test_parse_model_outputs.py \
+  selfdrive/modeld/tests/test_constants.py \
+  selfdrive/pandad/tests/test_pandad_flash.py \
+  selfdrive/pandad/tests/test_pandad_pandad_wrapper.py \
+  selfdrive/pandad/tests/test_pandad_can_capnp_roundtrip.py \
+  selfdrive/pandad/tests/test_pandad_can_capnp_event_validity.py \
+  selfdrive/pandad/tests/test_pandad_can_capnp_multiblob.py \
+  -q
+scons -j8 selfdrive/pandad/tests/test_pandad_usbprotocol
+./selfdrive/pandad/tests/test_pandad_usbprotocol
+```
+
+### B — Hardware / `tici` (upstream; optional for this project)
+
+| Status | Item | Location | Note |
+|--------|------|----------|------|
+| [-] | Loopback: zero message loss (real pandas) | `test_pandad_loopback.py` | `COMMA` + pandas; not in fork CI |
+| [-] | SPI fault injection (``SPI_ERR_PROB``) | `test_pandad_spi.py` | `tici` + hardware path |
+| [-] | Firmware recovery / safety-adjacent flows | `test_pandad.py` | Device / `tici` as marked |
+
+**Maps:** R2, R3 (A); R2 for full safety/heartbeat (B, device).
 
 ---
 
@@ -137,3 +165,4 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-20 | Expanded pandad STP-aligned desktop tests (`test_pandad_can_capnp.py`, `test_pandad_pandad_wrapper.py`). |
 | 2026-04-25 | Pandad: `test_pandad_flash.py` for `flash_panda()`; USB gtest sections `incomplete_receive_buffering` + `bus_filtering` in `test_pandad_usbprotocol.cc`. |
 | 2026-04-26 | Document GitHub Actions: fork vs `commaai` CI; `our_tests` widened; `selfdrive` jobs gated to upstream + optional dispatch; Codecov `fail_ci_if_error: false` on unit/replay/cars. |
+| 2026-04-27 | Pandad: section “finished” — A vs B (desktop done vs device deferred); local verification block; summary row updated. `our_tests.yaml` pytest list aligned with pandad capnp split files. |

@@ -46,4 +46,7 @@ jobs:
           selfdrive/modeld/tests/test_constants.py \
           selfdrive/pandad/tests/test_pandad_flash.py \
           selfdrive/pandad/tests/test_pandad_pandad_wrapper.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_roundtrip.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_event_validity.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_multiblob.py \
           -v --tb=short --maxfail=5
