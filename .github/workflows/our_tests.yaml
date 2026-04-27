@@ -19,6 +19,8 @@ jobs:
         submodules: true
 
     - name: Pull LFS files
+      # Forks may get 404 from gitlab LFS; allow job to continue (scons may still need assets)
+      continue-on-error: true
       run: |
         git lfs install
         git lfs pull
@@ -36,9 +38,17 @@ jobs:
         source .venv/bin/activate
         scons -j$(nproc)
 
-    - name: Run our modeld unit tests
+    - name: Run our modeld and pandad unit tests
       run: |
+        set -e
         source .venv/bin/activate
-        python -m pytest selfdrive/modeld/tests/test_parse_model_outputs.py \
-                         selfdrive/modeld/tests/test_constants.py \
-                         -v --tb=short -x
+        # Course-owned tests (no device); align with docs/testing/TESTING-TRACKER.md
+        python -m pytest \
+          selfdrive/modeld/tests/test_parse_model_outputs.py \
+          selfdrive/modeld/tests/test_constants.py \
+          selfdrive/pandad/tests/test_pandad_flash.py \
+          selfdrive/pandad/tests/test_pandad_pandad_wrapper.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_roundtrip.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_event_validity.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_multiblob.py \
+          -v --tb=short --maxfail=5
