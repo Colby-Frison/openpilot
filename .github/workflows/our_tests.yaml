@@ -1,0 +1,54 @@
+name: our-tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  run-our-tests:
+    name: Run our unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Pull LFS files
+      # Forks may get 404 from gitlab LFS; allow job to continue (scons may still need assets)
+      continue-on-error: true
+      run: |
+        git lfs install
+        git lfs pull
+
+    - name: Install system dependencies
+      run: |
+        tools/install_ubuntu_dependencies.sh
+
+    - name: Install Python dependencies
+      run: |
+        tools/install_python_dependencies.sh
+
+    - name: Build openpilot
+      run: |
+        source .venv/bin/activate
+        scons -j$(nproc)
+
+    - name: Run our modeld and pandad unit tests
+      run: |
+        set -e
+        source .venv/bin/activate
+        # Course-owned tests (no device); align with docs/testing/TESTING-TRACKER.md
+        python -m pytest \
+          selfdrive/modeld/tests/test_parse_model_outputs.py \
+          selfdrive/modeld/tests/test_constants.py \
+          selfdrive/pandad/tests/test_pandad_flash.py \
+          selfdrive/pandad/tests/test_pandad_pandad_wrapper.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_roundtrip.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_event_validity.py \
+          selfdrive/pandad/tests/test_pandad_can_capnp_multiblob.py \
+          -v --tb=short --maxfail=5

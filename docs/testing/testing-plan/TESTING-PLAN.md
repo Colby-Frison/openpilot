@@ -322,10 +322,9 @@ The update-path validation also remains operationally sensitive and thus require
 * Practical limits on combinational coverage: Because the system includes multiple interacting services, hardware configurations, and runtime conditions, it is not feasible to test every possible combination of states, failures, and dependencies.
 * Dependence on representative test data: Confidence in model, sensor, logging, and replay-based checks depends on the quality and representativeness of the selected fixtures, traces, and recorded scenarios.
 
+<a id="8.2-potential-challenges-and-mitigation-strategies"></a>
 
-###
-
-### 8.2 Potential challenges and mitigation strategies {#8.2-potential-challenges-and-mitigation-strategies}
+### 8.2 Potential challenges and mitigation strategies
 
 There are numerous challenges that could be encountered, but since they are identified early, they can be effectively managed.
 Some of these potential challenges include:
@@ -337,7 +336,9 @@ Some of these potential challenges include:
 * Sensor/network nondeterminism: use traces, tolerances, and retry-aware checks once again increase coverage
 
 
-# Reference {#reference}
+<a id="reference"></a>
+
+# Reference
 
 \[1\] IEEE Standards Association, *IEEE Std 829-2008: IEEE Standard for Software and System Test Documentation*. Available: [https://standards.ieee.org/ieee/829/6803/](https://standards.ieee.org/ieee/829/6803/)
 

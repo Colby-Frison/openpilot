@@ -29,8 +29,12 @@ env:
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
 
+# Job `if`: main repo, workflow_dispatch, or PRs with base == commaai (upstream). Team-only
+# forks: skipped. See docs/testing/TESTING-TRACKER.md (GitHub Actions).
+
 jobs:
   build_release:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     name: build release
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
@@ -67,6 +71,7 @@ jobs:
         ${{ env.RUN }} "release/check-dirty.sh"
 
   build:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || 'ubuntu-24.04' }}
@@ -84,6 +89,7 @@ jobs:
       timeout-minutes: 30
 
   build_mac:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     name: build macOS
     runs-on: ${{ github.repository == 'commaai/openpilot' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
@@ -109,6 +115,7 @@ jobs:
       run: . .venv/bin/activate && scons -j$(nproc)
 
   static_analysis:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     name: static analysis
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
@@ -125,6 +132,7 @@ jobs:
       run: ${{ env.RUN }} "scripts/lint/lint.sh"
 
   unit_tests:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     name: unit tests
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
@@ -148,10 +156,12 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
+        fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   process_replay:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     name: process replay
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
@@ -201,10 +211,12 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
+        fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test_cars:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     name: cars
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
@@ -238,6 +250,7 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}-${{ matrix.job }}
+        fail_ci_if_error: false
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -301,7 +314,7 @@ jobs:
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || 'ubuntu-24.04' }}
-    if: (github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     steps:
     - uses: actions/checkout@v4
       with:
@@ -318,6 +331,7 @@ jobs:
                         CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
 
   create_ui_report:
+    if: github.repository == 'commaai/openpilot' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.base.repository.full_name == 'commaai/openpilot')
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
     runs-on:

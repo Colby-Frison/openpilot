@@ -12,6 +12,7 @@
 - Use `Maps: R#` in new test docstrings (see LOW-LEVEL §Phase 0).
 - Mark items `[x]` when merged and stable in `main` (or your integration branch).
 - Mark items `[~]` for in-progress (optional; or use a short note under the item).
+- Mark `[-]` when an item is **deferred** (e.g. needs hardware) rather than a remaining task for the current milestone.
 
 ---
 
@@ -19,9 +20,9 @@
 
 | Subsystem | Done (high level) | Open / next |
 |-----------|-------------------|-------------|
-| modeld | Phase B/B+, Phase C contracts + timeliness subtest; upstream anchor unchanged | Coverage compare opt-in; full `pytest selfdrive/modeld/tests` gate |
-| pandad | STP-aligned desktop units (``pandad.py``, ``pandad_api_impl``); upstream gtest / `tici` integration | USB/gtest edges; optional non-`tici` loopback/SPI shims |
-| system | [SYSTEM-TESTING.md](SYSTEM-TESTING.md) + ``system/tests/contract/``; harness under ``system/tests/support/`` | P0 manager/loggerd depth; P1 athena/webrtc helper mocks; document device-only gaps (esim/power measure) |
+| modeld | Parser unit suite; fill + integration test files exist | Extend fill/integration coverage; optional timing tests |
+| pandad | **Desktop / course scope complete:** CAN capnp split tests; ``pandad.py`` wrapper + ``flash_panda``; USB gtest (pack/unpack + incomplete buffer + bus filter); in ``our_tests`` CI | **Out of course gate:** loopback, SPI, ``test_pandad`` need real pandas + ``tici`` (see below) |
+| system | Upstream tests per component | Team-owned extensions per LOW §4.3 P0–P2 |
 | Infra | Shared `support/` packages + pytest plugins; harness smoke + multi-service IPC | Extend harness or extract duplicated setup |
 
 ---
@@ -51,16 +52,44 @@ Aligned with [LOW-LEVEL §7.1](LOW-LEVEL-TEST-PLAN.md#71-modeld-rollout-gates) r
 
 ## pandad (assignment-scoped files)
 
-| Status | Item | Location |
-|--------|------|----------|
-| [x] | CAN capnp serialization split by concern — skips if Cython ext missing | `test_pandad_can_capnp_roundtrip.py`, `test_pandad_can_capnp_event_validity.py`, `test_pandad_can_capnp_multiblob.py` |
-| [x] | ``pandad.py`` ``get_expected_signature`` success and error paths (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
-| [ ] | Extra USB protocol / buffer edge cases | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` |
-| [ ] | Additional loopback / transport integrity | `selfdrive/pandad/tests/test_pandad_loopback.py` |
-| [ ] | SPI fault-injection / retry coverage | `selfdrive/pandad/tests/test_pandad_spi.py` |
-| [ ] | Device-heavy recovery / safety-adjacent (`tici` as required) | `selfdrive/pandad/tests/test_pandad.py` |
+**Definition of done (course / STP desktop):** all rows in **A** are `[x]`. The three rows in **B** are **existing upstream** suites that need **Comma device / multiple pandas**; they are **not** a failing checklist for this fork—**deferred** unless the team runs them on `tici` hardware.
 
-**Maps:** R2, R3 (and R2 for device safety flows).
+### A — Desktop (no Panda bus), course gate in [`our_tests.yaml`](../../.github/workflows/our_tests.yaml) + gtest binary
+
+| Status | Item | Location / how to run |
+|--------|------|-------------------------|
+| [x] | CAN capnp serialization (split: roundtrip, event validity, multiblob) — skips if Cython ext missing | `test_pandad_can_capnp_roundtrip.py`, `test_pandad_can_capnp_event_validity.py`, `test_pandad_can_capnp_multiblob.py` |
+| [x] | ``pandad.py`` ``get_expected_signature`` (mocked ``Panda``) | `selfdrive/pandad/tests/test_pandad_pandad_wrapper.py` |
+| [x] | ``pandad.py`` ``flash_panda`` (mocked device: no-op, reflash, bootstub, post-flash mismatch) | `selfdrive/pandad/tests/test_pandad_flash.py` |
+| [x] | USB protocol gtest: pack/unpack (parameterized) + **incomplete receive reassembly** + **bus filter** in ``pack_can_buffer`` | `selfdrive/pandad/tests/test_pandad_usbprotocol.cc` — `scons -j8 selfdrive/pandad/tests/test_pandad_usbprotocol` then `selfdrive/pandad/tests/test_pandad_usbprotocol` |
+
+**One-shot local verification (matches CI intent):**
+
+```bash
+# Pytest (after venv + scons; same set as our-tests workflow for pandad+modeld)
+source .venv/bin/activate
+python -m pytest \
+  selfdrive/modeld/tests/test_parse_model_outputs.py \
+  selfdrive/modeld/tests/test_constants.py \
+  selfdrive/pandad/tests/test_pandad_flash.py \
+  selfdrive/pandad/tests/test_pandad_pandad_wrapper.py \
+  selfdrive/pandad/tests/test_pandad_can_capnp_roundtrip.py \
+  selfdrive/pandad/tests/test_pandad_can_capnp_event_validity.py \
+  selfdrive/pandad/tests/test_pandad_can_capnp_multiblob.py \
+  -q
+scons -j8 selfdrive/pandad/tests/test_pandad_usbprotocol
+./selfdrive/pandad/tests/test_pandad_usbprotocol
+```
+
+### B — Hardware / `tici` (upstream; optional for this project)
+
+| Status | Item | Location | Note |
+|--------|------|----------|------|
+| [-] | Loopback: zero message loss (real pandas) | `test_pandad_loopback.py` | `COMMA` + pandas; not in fork CI |
+| [-] | SPI fault injection (``SPI_ERR_PROB``) | `test_pandad_spi.py` | `tici` + hardware path |
+| [-] | Firmware recovery / safety-adjacent flows | `test_pandad.py` | Device / `tici` as marked |
+
+**Maps:** R2, R3 (A); R2 for full safety/heartbeat (B, device).
 
 ---
 
@@ -99,6 +128,23 @@ Priorities from [LOW-LEVEL §4.3](LOW-LEVEL-TEST-PLAN.md#43-system).
 
 ---
 
+## GitHub Actions (CI)
+
+Upstream openpilot runs a **large** `selfdrive` workflow (Docker image `ghcr.io/commaai/openpilot-base`, scons in container, `PYTHONWARNINGS=error`, `pytest` with coverage, process replay, car model matrices, static analysis, macOS build, etc.). On a **class / team fork** (e.g. `Colby-Frison/openpilot`), the same job definitions often **fail** for reasons that are not about your new tests: missing `CODECOV_TOKEN`, `AZURE_COMMADATACI_*` secrets, smaller runners, Docker pull limits, or download caches.
+
+| Workflow / file | What it is | Expectation on team fork | Course signal |
+|-------------------|------------|---------------------------|---------------|
+| [`.github/workflows/our_tests.yaml`](../../.github/workflows/our_tests.yaml) | `our-tests` — native Ubuntu, deps + full `scons` + **pytest** (modeld + pandad course tests) | **Should** pass if `main` + tests are consistent | **Primary** “green” for authored tests |
+| [`.github/workflows/selfdrive_tests.yaml`](../../.github/workflows/selfdrive_tests.yaml) | `selfdrive` — build, static analysis, unit + replay + cars + UI report | **Skipped** on pushes/PRs that only use a team fork as **base** (e.g. `Colby-Frison` → `Colby-Frison`). **Runs** on `commaai/openpilot` and on **PRs into** `commaai/openpilot` (incl. from a fork). | Match upstream on PRs to comma; for fork-only branches rely on `our-tests`. |
+| [`.github/workflows/docs.yaml`](../../.github/workflows/docs.yaml) | Docs build | Usually passes | Light check |
+| `ui_preview`, `PR comments` | Often **skipped** by `if` / draft | N/A | N/A |
+
+**Local equivalents (before push):** `scons` + `pytest` for the same paths as `our_tests.yaml`; optional `tools/op.sh lint` and `selfdrive/pandad/tests/test_pandad_usbprotocol` after `scons` when touching C++.
+
+**Note:** Merging a PR **into** `commaai/openpilot` will still run the full `selfdrive` suite on the **main** repository with proper secrets; fork-only CI is intentionally **narrower** so the team is not blocked by infrastructure.
+
+---
+
 ## Nonfunctional themes (STP §7.2)
 
 Track as **additional cases** in the rows above, not as orphan workstreams.
@@ -127,3 +173,6 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-24 | System: `docs/testing/SYSTEM-TESTING.md` + `system/tests/contract/` (manager predicates, messaging simulation); renamed from `course/`. |
 | 2026-04-24 | System contract suite expanded: manager/build/timed/tombstoned/athenad/snapshot/power-monitor/agnos helpers; documented non-contractable device/network files. |
 | 2026-04-24 | System contract pass 2: added `athenad` queue/upload helper contracts and `agnos` partition helper contracts; coverage compare now shows `ours` > `baseline` for system profile. |
+| 2026-04-25 | Pandad: `test_pandad_flash.py` for `flash_panda()`; USB gtest sections `incomplete_receive_buffering` + `bus_filtering` in `test_pandad_usbprotocol.cc`. |
+| 2026-04-26 | Document GitHub Actions: fork vs `commaai` CI; `our_tests` widened; `selfdrive` jobs gated to upstream + optional dispatch; Codecov `fail_ci_if_error: false` on unit/replay/cars. |
+| 2026-04-27 | Pandad: section “finished” — A vs B (desktop done vs device deferred); local verification block; summary row updated. `our_tests.yaml` pytest list aligned with pandad capnp split files. |
