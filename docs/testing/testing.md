@@ -31,7 +31,7 @@ This directory documentation for testing the openpilot project 0.9.8 release don
 
 # Testing tracker
 
-* [TESTING-TRACKER.md](TESTING-TRACKER.md): Living backlog of done vs remaining work (modeld gates, pandad, `system/`, infra). Includes a **GitHub Actions** subsection (fork vs `commaai`, `our-tests` vs full `selfdrive`). Update as you merge or reprioritize.
+* [TESTING-TRACKER.md](TESTING-TRACKER.md): Living backlog of done vs remaining work (modeld gates, pandad, `system/`, infra). Includes a **GitHub Actions** subsection (fork vs `commaai`, `our-tests` LFS/MkDocs notes, `selfdrive` skips). Update as you merge or reprioritize.
 
 # Infrastructure overview
 

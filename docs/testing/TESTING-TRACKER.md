@@ -131,14 +131,16 @@ Upstream openpilot runs a **large** `selfdrive` workflow (Docker image `ghcr.io/
 
 | Workflow / file | What it is | Expectation on team fork | Course signal |
 |-------------------|------------|---------------------------|---------------|
-| [`.github/workflows/our_tests.yaml`](../../.github/workflows/our_tests.yaml) | `our-tests` — native Ubuntu, deps + full `scons` + **pytest** (modeld + pandad course tests) | **Should** pass if `main` + tests are consistent | **Primary** “green” for authored tests |
+| [`.github/workflows/our_tests.yaml`](../../.github/workflows/our_tests.yaml) | `our-tests` — native Ubuntu, deps + full `scons` + **pytest** (modeld + pandad course tests). `git lfs pull` uses **`continue-on-error`** so GitLab LFS 404s on forks do not fail the job before install (build may still fail if binaries are missing). | **Should** pass if deps + tests are consistent | **Primary** “green” for authored tests |
 | [`.github/workflows/selfdrive_tests.yaml`](../../.github/workflows/selfdrive_tests.yaml) | `selfdrive` — build, static analysis, unit + replay + cars + UI report | **Skipped** on pushes/PRs that only use a team fork as **base** (e.g. `Colby-Frison` → `Colby-Frison`). **Runs** on `commaai/openpilot` and on **PRs into** `commaai/openpilot` (incl. from a fork). | Match upstream on PRs to comma; for fork-only branches rely on `our-tests`. |
-| [`.github/workflows/docs.yaml`](../../.github/workflows/docs.yaml) | Docs build | Usually passes | Light check |
+| [`.github/workflows/docs.yaml`](../../.github/workflows/docs.yaml) | `mkdocs build` (`strict: true` in `mkdocs.yml`) | internal links in course STP ([`testing-plan/TESTING-PLAN.md`](testing-plan/TESTING-PLAN.md)) must resolve (HTML `<a id="...">` anchors for TOC targets) | Light check |
 | `ui_preview`, `PR comments` | Often **skipped** by `if` / draft | N/A | N/A |
 
 **Local equivalents (before push):** `scons` + `pytest` for the same paths as `our_tests.yaml`; optional `tools/op.sh lint` and `selfdrive/pandad/tests/test_pandad_usbprotocol` after `scons` when touching C++.
 
 **Note:** Merging a PR **into** `commaai/openpilot` will still run the full `selfdrive` suite on the **main** repository with proper secrets; fork-only CI is intentionally **narrower** so the team is not blocked by infrastructure.
+
+**STP + MkDocs:** The PDF/markdown `TESTING-PLAN` under `docs/testing/testing-plan/` is also parsed by the root `mkdocs` build. Broken internal anchors there fail the **docs** GitHub job; use explicit `<a id="..."></a>` so TOC hash links match.
 
 ---
 
@@ -166,3 +168,4 @@ Edit when you want a paper trail without git archaeology:
 | 2026-04-25 | Pandad: `test_pandad_flash.py` for `flash_panda()`; USB gtest sections `incomplete_receive_buffering` + `bus_filtering` in `test_pandad_usbprotocol.cc`. |
 | 2026-04-26 | Document GitHub Actions: fork vs `commaai` CI; `our_tests` widened; `selfdrive` jobs gated to upstream + optional dispatch; Codecov `fail_ci_if_error: false` on unit/replay/cars. |
 | 2026-04-27 | Pandad: section “finished” — A vs B (desktop done vs device deferred); local verification block; summary row updated. `our_tests.yaml` pytest list aligned with pandad capnp split files. |
+| 2026-04-28 | CI: `TESTING-PLAN.md` HTML anchors for §8.2 + Reference (MkDocs strict); `our_tests` LFS step `continue-on-error`. Tracker + GitHub Actions table updated. |
